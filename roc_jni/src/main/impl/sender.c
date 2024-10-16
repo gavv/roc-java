@@ -1,11 +1,11 @@
 #include "org_rocstreaming_roctoolkit_RocSender.h"
 
-#include "channel_set.h"
+#include "channel_layout.h"
 #include "clock_source.h"
 #include "common.h"
 #include "endpoint.h"
 #include "fec_encoding.h"
-#include "frame_encoding.h"
+#include "format.h"
 #include "packet_encoding.h"
 #include "resampler_backend.h"
 #include "resampler_profile.h"
@@ -26,36 +26,7 @@ static int sender_config_unmarshal(JNIEnv* env, roc_sender_config* config, jobje
     // set all fields to zeros
     memset(config, 0, sizeof(*config));
 
-    // frame_sample_rate
-    config->frame_sample_rate
-        = get_uint_field_value(env, senderConfigClass, jconfig, "frameSampleRate", &err);
-    if (err) return err;
-
-    // frame_channels
-    jobj = get_object_field(
-        env, senderConfigClass, jconfig, "frameChannels", "L" CHANNEL_SET_CLASS ";");
-    if (jobj != NULL) config->frame_channels = (roc_channel_set) get_channel_set(env, jobj);
-
-    // frame_encoding
-    jobj = get_object_field(
-        env, senderConfigClass, jconfig, "frameEncoding", "L" FRAME_ENCODING_CLASS ";");
-    if (jobj != NULL) config->frame_encoding = (roc_frame_encoding) get_frame_encoding(env, jobj);
-
-    // packet_sample_rate
-    config->packet_sample_rate
-        = get_uint_field_value(env, senderConfigClass, jconfig, "packetSampleRate", &err);
-    if (err) return err;
-
-    // packet_channels
-    jobj = get_object_field(
-        env, senderConfigClass, jconfig, "packetChannels", "L" CHANNEL_SET_CLASS ";");
-    if (jobj != NULL) config->packet_channels = (roc_channel_set) get_channel_set(env, jobj);
-
-    // packet_encoding
-    jobj = get_object_field(
-        env, senderConfigClass, jconfig, "packetEncoding", "L" PACKET_ENCODING_CLASS ";");
-    if (jobj != NULL)
-        config->packet_encoding = (roc_packet_encoding) get_packet_encoding(env, jobj);
+    // TODO
 
     // packet_length
     config->packet_length
@@ -124,27 +95,6 @@ JNIEXPORT jlong JNICALL Java_org_rocstreaming_roctoolkit_RocSender_open(
 
 out:
     return (jlong) sender;
-}
-
-JNIEXPORT void JNICALL Java_org_rocstreaming_roctoolkit_RocSender_setOutgoingAddress(
-    JNIEnv* env, jobject thisObj, jlong senderPtr, jint slot, jint interface, jstring jip) {
-    roc_sender* sender = NULL;
-    const char* ip = NULL;
-
-    sender = (roc_sender*) senderPtr;
-
-    ip = (*env)->GetStringUTFChars(env, jip, 0);
-    assert(ip != NULL);
-
-    if (roc_sender_set_outgoing_address(sender, (roc_slot) slot, (roc_interface) interface, ip)
-        != 0) {
-        jclass exceptionClass = (*env)->FindClass(env, EXCEPTION);
-        (*env)->ThrowNew(env, exceptionClass, "Can't set outgoing address");
-        goto out;
-    }
-
-out:
-    if (ip != NULL) (*env)->ReleaseStringUTFChars(env, jip, ip);
 }
 
 JNIEXPORT void JNICALL Java_org_rocstreaming_roctoolkit_RocSender_connect(

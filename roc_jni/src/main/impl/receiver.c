@@ -1,10 +1,10 @@
 #include "org_rocstreaming_roctoolkit_RocReceiver.h"
 
-#include "channel_set.h"
+#include "channel_layout.h"
 #include "clock_source.h"
 #include "common.h"
 #include "endpoint.h"
-#include "frame_encoding.h"
+#include "format.h"
 #include "resampler_backend.h"
 #include "resampler_profile.h"
 
@@ -23,20 +23,7 @@ static int receiver_config_unmarshal(JNIEnv* env, roc_receiver_config* config, j
     // set all fields to zeros
     memset(config, 0, sizeof(*config));
 
-    // frame_sample_rate
-    config->frame_sample_rate
-        = get_uint_field_value(env, receiverConfigClass, jconfig, "frameSampleRate", &err);
-    if (err) return err;
-
-    // frame_channels
-    jobj = get_object_field(
-        env, receiverConfigClass, jconfig, "frameChannels", "L" CHANNEL_SET_CLASS ";");
-    if (jobj != NULL) config->frame_channels = (roc_channel_set) get_channel_set(env, jobj);
-
-    // frame_encoding
-    jobj = get_object_field(
-        env, receiverConfigClass, jconfig, "frameEncoding", "L" FRAME_ENCODING_CLASS ";");
-    if (jobj != NULL) config->frame_encoding = (roc_frame_encoding) get_frame_encoding(env, jobj);
+    // TODO
 
     // clock_source
     jobj = get_object_field(
@@ -59,14 +46,9 @@ static int receiver_config_unmarshal(JNIEnv* env, roc_receiver_config* config, j
         = get_duration_field_value(env, receiverConfigClass, jconfig, "targetLatency", &err);
     if (err) return err;
 
-    // max_latency_overrun
-    config->max_latency_overrun
-        = get_duration_field_value(env, receiverConfigClass, jconfig, "maxLatencyOverrun", &err);
-    if (err) return err;
-
-    // max_latency_underrun
-    config->max_latency_underrun
-        = get_duration_field_value(env, receiverConfigClass, jconfig, "maxLatencyUnderrun", &err);
+    // latency_tolerance
+    config->latency_tolerance
+        = get_duration_field_value(env, receiverConfigClass, jconfig, "latencyTolerance", &err);
     if (err) return err;
 
     // no_playback_timeout
@@ -74,14 +56,9 @@ static int receiver_config_unmarshal(JNIEnv* env, roc_receiver_config* config, j
         = get_duration_field_value(env, receiverConfigClass, jconfig, "noPlaybackTimeout", &err);
     if (err) return err;
 
-    // broken_playback_timeout
-    config->broken_playback_timeout = get_duration_field_value(
-        env, receiverConfigClass, jconfig, "brokenPlaybackTimeout", &err);
-    if (err) return err;
-
-    // breakage_detection_window
-    config->breakage_detection_window = get_duration_field_value(
-        env, receiverConfigClass, jconfig, "breakageDetectionWindow", &err);
+    // choppy_playback_timeout
+    config->choppy_playback_timeout = get_duration_field_value(
+        env, receiverConfigClass, jconfig, "choppyPlaybackTimeout", &err);
     if (err) return err;
 
     return 0;
@@ -110,27 +87,6 @@ JNIEXPORT jlong JNICALL Java_org_rocstreaming_roctoolkit_RocReceiver_open(
 
 out:
     return (jlong) receiver;
-}
-
-JNIEXPORT void JNICALL Java_org_rocstreaming_roctoolkit_RocReceiver_setMulticastGroup(
-    JNIEnv* env, jobject thisObj, jlong receiverPtr, jint slot, jint interface, jstring jip) {
-    roc_receiver* receiver = NULL;
-    const char* ip = NULL;
-
-    receiver = (roc_receiver*) receiverPtr;
-
-    ip = (*env)->GetStringUTFChars(env, jip, 0);
-    assert(ip != NULL);
-
-    if (roc_receiver_set_multicast_group(receiver, (roc_slot) slot, (roc_interface) interface, ip)
-        != 0) {
-        jclass exceptionClass = (*env)->FindClass(env, EXCEPTION);
-        (*env)->ThrowNew(env, exceptionClass, "Can't set multicast group");
-        goto out;
-    }
-
-out:
-    if (ip != NULL) (*env)->ReleaseStringUTFChars(env, jip, ip);
 }
 
 JNIEXPORT void JNICALL Java_org_rocstreaming_roctoolkit_RocReceiver_bind(

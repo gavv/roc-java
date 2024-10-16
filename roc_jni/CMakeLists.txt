@@ -12,13 +12,13 @@ if(APPLE)
 endif()
 
 add_library(roc_jni SHARED
-        src/main/impl/channel_set.c
+        src/main/impl/channel_layout.c
         src/main/impl/clock_source.c
         src/main/impl/common.c
         src/main/impl/context.c
         src/main/impl/endpoint.c
         src/main/impl/fec_encoding.c
-        src/main/impl/frame_encoding.c
+        src/main/impl/format.c
         src/main/impl/logger.c
         src/main/impl/packet_encoding.c
         src/main/impl/protocol.c
